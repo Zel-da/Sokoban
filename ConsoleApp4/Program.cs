@@ -13,13 +13,12 @@
     {
         static void Main(string[] args)
         {
-            // 초기 세팅
-            Console.ResetColor(); // 컬러를 초기화한다.
-            Console.CursorVisible = false; // 커서를 숨긴다.
-            Console.Title = "Junkoban"; // 타이틀을 설정한다.
-            Console.BackgroundColor = ConsoleColor.DarkBlue; // 배경색을 설정한다.
-            Console.ForegroundColor = ConsoleColor.Gray; // 글꼴색을 설정한다.
-            Console.Clear(); // 콘솔 창에 출력된 내용을 모두 지운다.
+            Console.ResetColor();
+            Console.CursorVisible = false; 
+            Console.Title = "Junkoban";
+            Console.BackgroundColor = ConsoleColor.DarkBlue;
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Clear();
             
             // 플레이어 위치 좌표
             int playerX = 0;
@@ -29,7 +28,7 @@
             const int minY = 0;
             const int maxY = 30;
             
-            // 플레이어의 이동 방향
+            // 플레이어 방향
             Direction playerMoveDirection = Direction.None;
             
             // 좌표
@@ -103,6 +102,7 @@
                     });
                     
                     pushedBoxIndex = i;
+                    
                     break;
                 }
                 
@@ -134,12 +134,10 @@
                         PushOut(playerMoveDirection, ref boxPositionsX[pushedBoxIndex], ref boxPositionsY[pushedBoxIndex], wallPositionsX[i], wallPositionsY[i]);
                         PushOut(playerMoveDirection, ref playerX, ref playerY, boxPositionsX[pushedBoxIndex], boxPositionsY[pushedBoxIndex]);
                     });
-
+                    
                     break;
                 }
-                
                 int boxOnGoalCount = CountBoxOnGoal(in boxPositionsX, in boxPositionsY, ref isBoxOnGoal, in goalPositionsX, in goalPositionsY);
-                
                 if (boxOnGoalCount == goalCount)
                     break;
             }
@@ -156,20 +154,16 @@
             {
                 int boxCount = boxPositionsX.Length;
                 int goalCount = goalPositionsX.Length;
-                
                 int result = 0;
                 for (int boxId = 0; boxId < boxCount; ++boxId)
                 {
                     isBoxOnGoal[boxId] = false;
-                    
                     for (int goalId = 0; goalId < goalCount; ++goalId)
                     {
                         if (IsCollided(boxPositionsX[boxId], boxPositionsY[boxId], goalPositionsX[goalId], goalPositionsY[goalId]))
                         {
                             ++result;
-                            
                             isBoxOnGoal[boxId] = true;
-                            
                             break;
                         }
                     }
