@@ -46,6 +46,7 @@
             //bool[] isBoxOnGoal = new bool[boxPositionsX.Length];
 
             int randomboxPoint = 0;
+            Random random = new Random();
             
             while (true)
             {
@@ -72,6 +73,7 @@
                 {
                     RenderObject(randomboxPositionsX[i], randomboxPositionsY[i], "R");
                 }
+                Console.SetCursorPosition(0, 31);
                 Console.WriteLine("Point : " + randomboxPoint);
                 
                 ConsoleKeyInfo keyInfo = Console.ReadKey();
@@ -143,11 +145,20 @@
                 {
                     if (IsCollided(playerX, playerY, randomboxPositionsX[i], randomboxPositionsY[i]))
                     {
-                        randomboxPoint++; 
-                        randomboxPositionsX[i] = new Random().Next(minX, maxX + 1);
-                        randomboxPositionsY[i] = new Random().Next(minY, maxY + 1);
+                        randomboxPoint += GetRandomBoxPoint(random);
+                        randomboxPositionsX[i] = new Random().Next(minX + 1, maxX);
+                        randomboxPositionsY[i] = new Random().Next(minY + 1, maxY);
                     }
                 }
+            }
+            
+            int GetRandomBoxPoint(Random random)
+            {
+                double chance = random.NextDouble();
+                if (chance < 0.90) return 1;
+                if (chance < 0.99) return 10;
+                if (chance < 0.999) return 100;
+                return 100000;
             }
 
             void RenderObject(int x, int y, string icon)
