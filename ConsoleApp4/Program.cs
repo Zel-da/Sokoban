@@ -1,288 +1,171 @@
-﻿namespace ConsoleApp4
+﻿using System;
+
+namespace ConsoleApp4;
+
+internal class Program
 {
-     enum Direction
+    static void Main(string[] args)
     {
-       None,
-       Left,
-       Right,
-       Up,
-       Down
-    }
+        Console.ResetColor();
+        Console.CursorVisible = false;
+        Console.Title = "Junkoban";
+        Console.BackgroundColor = ConsoleColor.DarkBlue;
+        Console.ForegroundColor = ConsoleColor.Gray;
+        Console.Clear();
 
-    class Position
-    {
-        public int X { get; set; }
-        public int Y { get; set; }
+        int playerStartX = 0;
+        int playerStartY = 0;
+        const int minX = 0;
+        const int maxX = 30;
+        const int minY = 0;
+        const int maxY = 30;
 
-        public Position(int x, int y)
+        Player player = new Player(playerStartX, playerStartY);
+        Box[] boxes = {
+            new Box(5, 5), new Box(5, 4), new Box(5, 3), new Box(5, 2), new Box(5, 1)
+        };
+        Wall[] walls = {
+            new Wall(7, 7), new Wall(7, 8), new Wall(7, 9), new Wall(7, 10), new Wall(7, 11)
+        };
+        Goal[] goals = {
+            new Goal(10, 10), new Goal(10, 9), new Goal(10, 8), new Goal(10, 7), new Goal(10, 6)
+        };
+        RandomBox randomBox = new RandomBox(13, 13);
+
+        int pushedBoxIndex = 0;
+        int randomBoxPoint = 0;
+        Random random = new Random();
+
+        while (true)
         {
-            X = x;
-            Y = y;
-        }
-    }
-    
-    internal class Program
-    {
-        static void Main(string[] args)
-        {
-            Console.ResetColor();
-            Console.CursorVisible = false; 
-            Console.Title = "Junkoban";
-            Console.BackgroundColor = ConsoleColor.DarkBlue;
-            Console.ForegroundColor = ConsoleColor.Gray;
             Console.Clear();
 
-            int playerX = 0;
-            int playerY = 0;
-            const int minX = 0;
-            const int maxX = 30;
-            const int minY = 0;
-            const int maxY = 30;
-
-            Direction playerMoveDirection = Direction.None;
-
-            int[] boxPositionsX = { 5, 5, 5, 5, 5};
-            int[] boxPositionsY = { 5, 4, 3, 2, 1};
-            int[] wallPositionsX = { 7, 7, 7, 7, 7};
-            int[] wallPositionsY = { 7, 8, 9, 10, 11};
-            int[] goalPositionsX = { 10, 10, 10, 10, 10};
-            int[] goalPositionsY = { 10, 9, 8, 7, 6};
-            int[] randomboxPositionsX = { 13};
-            int[] randomboxPositionsY = { 13};
-
-            int pushedBoxIndex = 0;
-
-            bool[] isBoxOnGoal = new bool[boxPositionsX.Length];
-            
-            //bool isJump = false;
-            //bool[] isBoxOnGoal = new bool[boxPositionsX.Length];
-
-            int randomboxPoint = 0;
-            Random random = new Random();
-            
-            while (true)
+            player.Render();
+            foreach (var goal in goals) goal.Render();
+            foreach (var wall in walls) wall.Render();
+            foreach (var box in boxes)
             {
-                Console.Clear();
-                RenderObject(playerX, playerY, "P");
-                int goalCount = goalPositionsX.Length;
-                for (int i = 0; i < goalCount; ++i)
-                {
-                    RenderObject(goalPositionsX[i], goalPositionsY[i], "G");
-                }
-                int boxCount = boxPositionsX.Length;
-                for (int i = 0; i < boxCount; ++i)
-                {
-                    string boxIcon = isBoxOnGoal[i] ? "O" : "B";
-                    RenderObject(boxPositionsX[i], boxPositionsY[i], boxIcon);
-                }
-                int wallCount = wallPositionsX.Length;
-                for (int i = 0; i < wallCount; ++i)
-                {
-                    RenderObject(wallPositionsX[i], wallPositionsY[i], "W");
-                }
-                int randomboxCount = randomboxPositionsX.Length;
-                for(int i = 0; i < randomboxCount; i++)
-                {
-                    RenderObject(randomboxPositionsX[i], randomboxPositionsY[i], "R");
-                }
-                Console.SetCursorPosition(0, 31);
-                Console.WriteLine("Point : " + randomboxPoint);
-                
-                ConsoleKeyInfo keyInfo = Console.ReadKey();
-                ConsoleKey key = keyInfo.Key;
+                box.UpdateIcon();
+                box.Render();
+            }
+            randomBox.Render();
 
-                MovePlayer(key, ref playerX, ref playerY, ref playerMoveDirection);
+            Console.SetCursorPosition(0, 31);
+            Console.WriteLine("Point : " + randomBoxPoint);
 
-                for (int i = 0; i < wallCount; ++i)
-                {
-                    if (false == IsCollided(playerX, playerY, wallPositionsX[i], wallPositionsY[i]))
-                    {
-                        continue;
-                    }
-                    
-                    OnCollision(() =>
-                    {
-                        PushOut(playerMoveDirection, ref playerX, ref playerY, wallPositionsX[i], wallPositionsY[i]);
-                    });
-                }
+            ConsoleKeyInfo keyInfo = Console.ReadKey();
+            player.Move(keyInfo.Key, minX, maxX, minY, maxY);
 
-                for (int i = 0; i < boxCount; ++i)
-                {
-                    if (false == IsCollided(playerX, playerY, boxPositionsX[i], boxPositionsY[i]))
-                        continue;
-                    
-                    OnCollision(() =>
-                    {
-                        MoveBox(playerMoveDirection, ref boxPositionsX[i], ref boxPositionsY[i], playerX, playerY);
-                    });
-                    
-                    pushedBoxIndex = i;
-                    
+            foreach (var wall in walls)
+            {
+                if (!IsCollided(player.Position, wall.Position)) continue;
+                PushOut(player.MoveDirection, player.Position, wall.Position);
+            }
+
+            for (int i = 0; i < boxes.Length; ++i)
+            {
+                if (!IsCollided(player.Position, boxes[i].Position)) continue;
+
+                MoveBox(player.MoveDirection, boxes[i].Position, player.Position);
+                pushedBoxIndex = i;
+                break;
+            }
+
+            for (int i = 0; i < boxes.Length; ++i)
+            {
+                if (pushedBoxIndex == i) continue;
+                if (!IsCollided(boxes[pushedBoxIndex].Position, boxes[i].Position)) continue;
+
+                PushOut(player.MoveDirection, boxes[pushedBoxIndex].Position, boxes[i].Position);
+                PushOut(player.MoveDirection, player.Position, boxes[pushedBoxIndex].Position);
+            }
+
+            foreach (var wall in walls)
+            {
+                if (!IsCollided(boxes[pushedBoxIndex].Position, wall.Position)) continue;
+
+                PushOut(player.MoveDirection, boxes[pushedBoxIndex].Position, wall.Position);
+                PushOut(player.MoveDirection, player.Position, boxes[pushedBoxIndex].Position);
+                break;
+            }
+
+            int boxOnGoalCount = CountBoxOnGoal(boxes, goals);
+            if (boxOnGoalCount == goals.Length) break;
+
+            if (IsCollided(player.Position, randomBox.Position))
+            {
+                randomBoxPoint += GetRandomBoxPoint(random);
+                randomBox.Position.X = random.Next(minX + 1, maxX);
+                randomBox.Position.Y = random.Next(minY + 1, maxY);
+            }
+        }
+
+        int GetRandomBoxPoint(Random random)
+        {
+            double chance = random.NextDouble();
+            if (chance < 0.90) return 1;
+            if (chance < 0.99) return 10;
+            if (chance < 0.999) return 100;
+            return 100000;
+        }
+
+        bool IsCollided(Position pos1, Position pos2) => pos1.X == pos2.X && pos1.Y == pos2.Y;
+
+        void PushOut(Direction moveDirection, Position objPos, Position collidedPos)
+        {
+            switch (moveDirection)
+            {
+                case Direction.Left:
+                    objPos.X = Math.Min(collidedPos.X + 1, maxX);
                     break;
-                }
-
-                for (int i = 0; i < boxCount; ++i)
-                {
-                    if (pushedBoxIndex == i)
-                        continue;
-
-                    if (false == IsCollided(boxPositionsX[pushedBoxIndex], boxPositionsY[pushedBoxIndex], boxPositionsX[i], boxPositionsY[i]))
-                        continue;
-                    
-                    OnCollision(() =>
-                    {
-                        PushOut(playerMoveDirection, ref boxPositionsX[pushedBoxIndex], ref boxPositionsY[pushedBoxIndex], boxPositionsX[i], boxPositionsY[i]);
-                        PushOut(playerMoveDirection, ref playerX, ref playerY, boxPositionsX[pushedBoxIndex], boxPositionsY[pushedBoxIndex]);
-                    });
-                }
-
-                for (int i = 0; i < wallCount; ++i)
-                {
-                    if (false == IsCollided(boxPositionsX[pushedBoxIndex], boxPositionsY[pushedBoxIndex], wallPositionsX[i], wallPositionsY[i]))
-                        continue;
-                    
-                    OnCollision(() =>
-                    {
-                        PushOut(playerMoveDirection, ref boxPositionsX[pushedBoxIndex], ref boxPositionsY[pushedBoxIndex], wallPositionsX[i], wallPositionsY[i]);
-                        PushOut(playerMoveDirection, ref playerX, ref playerY, boxPositionsX[pushedBoxIndex], boxPositionsY[pushedBoxIndex]);
-                    });
-                    
+                case Direction.Right:
+                    objPos.X = Math.Max(collidedPos.X - 1, minX);
                     break;
-                }
-                int boxOnGoalCount = CountBoxOnGoal(in boxPositionsX, in boxPositionsY, ref isBoxOnGoal, in goalPositionsX, in goalPositionsY);
-                if (boxOnGoalCount == goalCount)
+                case Direction.Up:
+                    objPos.Y = Math.Min(collidedPos.Y + 1, maxY);
                     break;
+                case Direction.Down:
+                    objPos.Y = Math.Max(collidedPos.Y - 1, minY);
+                    break;
+            }
+        }
 
-                for (int i = 0; i < randomboxCount; i++)
+        void MoveBox(Direction moveDirection, Position boxPos, Position playerPos)
+        {
+            switch (moveDirection)
+            {
+                case Direction.Left:
+                    boxPos.X = Math.Max(playerPos.X - 1, minX);
+                    break;
+                case Direction.Right:
+                    boxPos.X = Math.Min(playerPos.X + 1, maxX);
+                    break;
+                case Direction.Up:
+                    boxPos.Y = Math.Max(playerPos.Y - 1, minY);
+                    break;
+                case Direction.Down:
+                    boxPos.Y = Math.Min(playerPos.Y + 1, maxY);
+                    break;
+            }
+        }
+
+        int CountBoxOnGoal(Box[] boxes, Goal[] goals)
+        {
+            int result = 0;
+            foreach (var box in boxes)
+            {
+                box.IsOnGoal = false;
+                foreach (var goal in goals)
                 {
-                    if (IsCollided(playerX, playerY, randomboxPositionsX[i], randomboxPositionsY[i]))
+                    if (IsCollided(box.Position, goal.Position))
                     {
-                        randomboxPoint += GetRandomBoxPoint(random);
-                        randomboxPositionsX[i] = new Random().Next(minX + 1, maxX);
-                        randomboxPositionsY[i] = new Random().Next(minY + 1, maxY);
+                        result++;
+                        box.IsOnGoal = true;
+                        break;
                     }
                 }
             }
-            
-            int GetRandomBoxPoint(Random random)
-            {
-                double chance = random.NextDouble();
-                if (chance < 0.90) return 1;
-                if (chance < 0.99) return 10;
-                if (chance < 0.999) return 100;
-                return 100000;
-            }
-
-            void RenderObject(int x, int y, string icon)
-            {
-                Console.SetCursorPosition(x, y);
-                Console.Write(icon);
-            }
-            
-            int CountBoxOnGoal(in int[] boxPositionsX, in int[] boxPositionsY, ref bool[] isBoxOnGoal, in int[] goalPositionsX, in int[] goalPositionsY)
-            {
-                int boxCount = boxPositionsX.Length;
-                int goalCount = goalPositionsX.Length;
-                int result = 0;
-                for (int boxId = 0; boxId < boxCount; ++boxId)
-                {
-                    isBoxOnGoal[boxId] = false;
-                    for (int goalId = 0; goalId < goalCount; ++goalId)
-                    {
-                        if (IsCollided(boxPositionsX[boxId], boxPositionsY[boxId], goalPositionsX[goalId], goalPositionsY[goalId]))
-                        {
-                            ++result;
-                            isBoxOnGoal[boxId] = true;
-                            break;
-                        }
-                    }
-                }
-                return result;
-            }
-            
-            void MoveToLeftOfTarget(out int x, in int target) => x = Math.Max(minX, target - 1);
-            void MoveToRightOfTarget(out int x, in int target) => x = Math.Min(target + 1, maxX);
-            void MoveToUpOfTarget(out int y, in int target) => y = Math.Max(minY, target - 1);
-            void MoveToDownOfTarget(out int y, in int target) => y = Math.Min(target + 1, maxY);
-
-            void MovePlayer(ConsoleKey key, ref int x, ref int y, ref Direction moveDirection)
-            {
-                if (key == ConsoleKey.LeftArrow)
-                {
-                    MoveToLeftOfTarget(out x, in x);
-                    moveDirection = Direction.Left;
-                }
-                if (key == ConsoleKey.RightArrow)
-                {
-                    MoveToRightOfTarget(out x, in x);
-                    moveDirection = Direction.Right;
-                }
-                if (key == ConsoleKey.UpArrow)
-                {
-                    MoveToUpOfTarget(out y, in y);
-                    moveDirection = Direction.Up;
-                }
-                if (key == ConsoleKey.DownArrow)
-                {
-                    MoveToDownOfTarget(out y, in y);
-                    moveDirection = Direction.Down;
-                }
-            }
-            
-            void OnCollision(Action action)
-            {
-                action();
-            }
-            void PushOut(Direction playerMoveDirection, ref int objX, ref int objY, in int collidedObjX, in int collidedObjY)
-            {
-                switch (playerMoveDirection)
-                {
-                    case Direction.Left:
-                        MoveToRightOfTarget(out objX, in collidedObjX);
-                        break;
-                    
-                    case Direction.Right:
-                        MoveToLeftOfTarget(out objX, in collidedObjX);
-                        break;
-                    
-                    case Direction.Up:
-                        MoveToDownOfTarget(out objY, in collidedObjY);
-                        break;
-                    
-                    case Direction.Down:
-                        MoveToUpOfTarget(out objY, in collidedObjY);
-                        break;
-                }
-            }
-            void MoveBox(Direction playerMoveDirection, ref int boxX, ref int boxY, in int playerX, in int playerY)
-            {
-                switch (playerMoveDirection)
-                {
-                    case Direction.Left:
-                        MoveToLeftOfTarget(out boxX, in playerX);
-                        break;
-                    
-                    case Direction.Right:
-                        MoveToRightOfTarget(out boxX, in playerX);
-                        break;
-                    
-                    case Direction.Up:
-                        MoveToUpOfTarget(out boxY, in playerY);
-                        break;
-                    
-                    case Direction.Down:
-                        MoveToDownOfTarget(out boxY, in playerY);
-                        break;
-                }
-            }
-            
-            bool IsCollided(int x1, int y1, int x2, int y2)
-            {
-                if (x1 == x2 && y1 == y2)
-                    return true;
-                else
-                    return false;
-            }
+            return result;
         }
     }
 }
