@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 
 namespace ConsoleApp4;
 
@@ -7,34 +6,31 @@ internal class Program
 {
     static void Main(string[] args)
     {
-        string[] mapFiles = { "map1.json", "map2.json" };
-        int currentMapIndex = 0;
+        Console.ResetColor();
+        Console.CursorVisible = false;
+        Console.Title = "Junkoban";
+        Console.BackgroundColor = ConsoleColor.DarkBlue;
+        Console.ForegroundColor = ConsoleColor.Gray;
+        Console.Clear();
 
-        while (currentMapIndex < mapFiles.Length)
-        {
-            MapData mapData = MapManager.LoadMap(mapFiles[currentMapIndex]);
-            PlayGame(mapData);
-
-            currentMapIndex++;
-        }
-
-        Console.WriteLine("모든 맵을 클리어했습니다!");
-    }
-
-    static void PlayGame(MapData mapData)
-    {
-        int playerStartX = mapData.PlayerStart.X;
-        int playerStartY = mapData.PlayerStart.Y;
+        int playerStartX = 0;
+        int playerStartY = 0;
         const int minX = 0;
         const int maxX = 30;
         const int minY = 0;
         const int maxY = 30;
 
         Player player = new Player(playerStartX, playerStartY);
-        Box[] boxes = CreateBoxes(mapData.Boxes);
-        Wall[] walls = CreateWalls(mapData.Walls);
-        Goal[] goals = CreateGoals(mapData.Goals);
-        RandomBox randomBox = new RandomBox(mapData.RandomBox.X, mapData.RandomBox.Y);
+        Box[] boxes = {
+            new Box(5, 5), new Box(5, 4), new Box(5, 3), new Box(5, 2), new Box(5, 1)
+        };
+        Wall[] walls = {
+            new Wall(7, 7), new Wall(7, 8), new Wall(7, 9), new Wall(7, 10), new Wall(7, 11)
+        };
+        Goal[] goals = {
+            new Goal(10, 10), new Goal(10, 9), new Goal(10, 8), new Goal(10, 7), new Goal(10, 6)
+        };
+        RandomBox randomBox = new RandomBox(13, 13);
 
         int pushedBoxIndex = 0;
         int randomBoxPoint = 0;
@@ -103,103 +99,73 @@ internal class Program
                 randomBox.Position.Y = random.Next(minY + 1, maxY);
             }
         }
-    }
 
-    static Box[] CreateBoxes(List<Position> positions)
-    {
-        Box[] boxes = new Box[positions.Count];
-        for (int i = 0; i < positions.Count; i++)
+        int GetRandomBoxPoint(Random random)
         {
-            boxes[i] = new Box(positions[i].X, positions[i].Y);
+            double chance = random.NextDouble();
+            if (chance < 0.90) return 1;
+            if (chance < 0.99) return 10;
+            if (chance < 0.999) return 100;
+            return 100000;
         }
-        return boxes;
-    }
 
-    static Wall[] CreateWalls(List<Position> positions)
-    {
-        Wall[] walls = new Wall[positions.Count];
-        for (int i = 0; i < positions.Count; i++)
+        bool IsCollided(Position pos1, Position pos2) => pos1.X == pos2.X && pos1.Y == pos2.Y;
+
+        void PushOut(Direction moveDirection, Position objPos, Position collidedPos)
         {
-            walls[i] = new Wall(positions[i].X, positions[i].Y);
-        }
-        return walls;
-    }
-
-    static Goal[] CreateGoals(List<Position> positions)
-    {
-        Goal[] goals = new Goal[positions.Count];
-        for (int i = 0; i < positions.Count; i++)
-        {
-            goals[i] = new Goal(positions[i].X, positions[i].Y);
-        }
-        return goals;
-    }
-
-    static int GetRandomBoxPoint(Random random)
-    {
-        double chance = random.NextDouble();
-        if (chance < 0.90) return 1;
-        if (chance < 0.99) return 10;
-        if (chance < 0.999) return 100;
-        return 100000;
-    }
-
-    static bool IsCollided(Position pos1, Position pos2) => pos1.X == pos2.X && pos1.Y == pos2.Y;
-
-    static void PushOut(Direction moveDirection, Position objPos, Position collidedPos)
-    {
-        switch (moveDirection)
-        {
-            case Direction.Left:
-                objPos.X = Math.Min(collidedPos.X + 1, 30);
-                break;
-            case Direction.Right:
-                objPos.X = Math.Max(collidedPos.X - 1, 0);
-                break;
-            case Direction.Up:
-                objPos.Y = Math.Min(collidedPos.Y + 1, 30);
-                break;
-            case Direction.Down:
-                objPos.Y = Math.Max(collidedPos.Y - 1, 0);
-                break;
-        }
-    }
-
-    static void MoveBox(Direction moveDirection, Position boxPos, Position playerPos)
-    {
-        switch (moveDirection)
-        {
-            case Direction.Left:
-                boxPos.X = Math.Max(playerPos.X - 1, 0);
-                break;
-            case Direction.Right:
-                boxPos.X = Math.Min(playerPos.X + 1, 30);
-                break;
-            case Direction.Up:
-                boxPos.Y = Math.Max(playerPos.Y - 1, 0);
-                break;
-            case Direction.Down:
-                boxPos.Y = Math.Min(playerPos.Y + 1, 30);
-                break;
-        }
-    }
-
-    static int CountBoxOnGoal(Box[] boxes, Goal[] goals)
-    {
-        int result = 0;
-        foreach (var box in boxes)
-        {
-            box.IsOnGoal = false;
-            foreach (var goal in goals)
+            switch (moveDirection)
             {
-                if (IsCollided(box.Position, goal.Position))
-                {
-                    result++;
-                    box.IsOnGoal = true;
+                case Direction.Left:
+                    objPos.X = Math.Min(collidedPos.X + 1, maxX);
                     break;
-                }
+                case Direction.Right:
+                    objPos.X = Math.Max(collidedPos.X - 1, minX);
+                    break;
+                case Direction.Up:
+                    objPos.Y = Math.Min(collidedPos.Y + 1, maxY);
+                    break;
+                case Direction.Down:
+                    objPos.Y = Math.Max(collidedPos.Y - 1, minY);
+                    break;
             }
         }
-        return result;
+
+        void MoveBox(Direction moveDirection, Position boxPos, Position playerPos)
+        {
+            switch (moveDirection)
+            {
+                case Direction.Left:
+                    boxPos.X = Math.Max(playerPos.X - 1, minX);
+                    break;
+                case Direction.Right:
+                    boxPos.X = Math.Min(playerPos.X + 1, maxX);
+                    break;
+                case Direction.Up:
+                    boxPos.Y = Math.Max(playerPos.Y - 1, minY);
+                    break;
+                case Direction.Down:
+                    boxPos.Y = Math.Min(playerPos.Y + 1, maxY);
+                    break;
+            }
+        }
+
+        int CountBoxOnGoal(Box[] boxes, Goal[] goals)
+        {
+            int result = 0;
+            foreach (var box in boxes)
+            {
+                box.IsOnGoal = false;
+                foreach (var goal in goals)
+                {
+                    if (IsCollided(box.Position, goal.Position))
+                    {
+                        result++;
+                        box.IsOnGoal = true;
+                        break;
+                    }
+                }
+            }
+            return result;
+        }
     }
 }

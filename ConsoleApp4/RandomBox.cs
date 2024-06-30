@@ -1,19 +1,6 @@
-using System;
-
 namespace ConsoleApp4;
 
-public class RandomBox
+class RandomBox : GameObject
 {
-    public Position Position { get; private set; }
-
-    public RandomBox(int x, int y)
-    {
-        Position = new Position(x, y);
-    }
-
-    public void Render()
-    {
-        Console.SetCursorPosition(Position.X, Position.Y);
-        Console.Write("R");
-    }
+    public RandomBox(int x, int y) : base(x, y, "R") { }
 }
