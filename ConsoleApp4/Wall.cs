@@ -1,6 +1,19 @@
+using System;
+
 namespace ConsoleApp4;
 
-class Wall : GameObject
+public class Wall
 {
-    public Wall(int x, int y) : base(x, y, "W") { }
+    public Position Position { get; private set; }
+
+    public Wall(int x, int y)
+    {
+        Position = new Position(x, y);
+    }
+
+    public void Render()
+    {
+        Console.SetCursorPosition(Position.X, Position.Y);
+        Console.Write("W");
+    }
 }

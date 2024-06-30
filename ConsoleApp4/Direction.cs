@@ -1,10 +1,11 @@
-namespace ConsoleApp4;
-
-enum Direction
+namespace ConsoleApp4
 {
-    None,
-    Left,
-    Right,
-    Up,
-    Down
+    public enum Direction
+    {
+        None,
+        Left,
+        Right,
+        Up,
+        Down
+    }
 }

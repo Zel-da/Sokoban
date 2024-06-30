@@ -1,13 +1,14 @@
-namespace ConsoleApp4;
-
-class Position
+namespace ConsoleApp4
 {
-    public int X { get; set; }
-    public int Y { get; set; }
-
-    public Position(int x, int y)
+    public class Position
     {
-        X = x;
-        Y = y;
+        public int X { get; set; }
+        public int Y { get; set; }
+
+        public Position(int x, int y)
+        {
+            X = x;
+            Y = y;
+        }
     }
 }

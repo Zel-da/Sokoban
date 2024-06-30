@@ -1,6 +1,19 @@
+using System;
+
 namespace ConsoleApp4;
 
-class Goal : GameObject
+public class Goal
 {
-    public Goal(int x, int y) : base(x, y, "G") { }
+    public Position Position { get; private set; }
+
+    public Goal(int x, int y)
+    {
+        Position = new Position(x, y);
+    }
+
+    public void Render()
+    {
+        Console.SetCursorPosition(Position.X, Position.Y);
+        Console.Write("G");
+    }
 }
